@@ -21,12 +21,12 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "🔍 Đang tìm cục nén MetaApp.zip trên hệ thống..."
-          $zipFile = Get-ChildItem -Path . -Filter "MetaApp.zip" -Recurse | Select-Object -First 1
+          $rarFile = Get-ChildItem -Path . -Filter "MetaApp.rar" -Recurse | Select-Object -First 1
           
-          if ($zipFile) {
+          if ($rarFile) {
               Write-Host "✅ Đã thấy! Đang xé vỏ bọc giải nén..."
-              $extractPath = "$($zipFile.DirectoryName)\ExtractedApp"
-              Expand-Archive -Path $zipFile.FullName -DestinationPath $extractPath -Force
+              $extractPath = "$($rarFile.DirectoryName)\ExtractedApp"
+              Expand-Archive -Path $rarFile.FullName -DestinationPath $extractPath -Force
               
               $exe = Get-ChildItem -Path $extractPath -Filter "MetaApp.exe" -Recurse | Select-Object -First 1
               if ($exe) {
