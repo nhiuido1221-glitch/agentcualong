@@ -1,21 +1,48 @@
 name: Daily News Bot
+
 on:
   schedule:
     - cron: '0 0 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Tạo nút bấm chạy bằng tay để test
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: 1. Tải code về máy chủ ảo
+        uses: actions/checkout@v4
+
+      - name: 2. Cài đặt Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: |
+
+      - name: 3. Cài đặt các thư viện bắt buộc
+        run: |
           python -m pip install --upgrade pip
           pip install requests feedparser beautifulsoup4 google-generativeai python-dotenv
-      - env:
+
+      - name: 4. Quét danh sách file và Kích hoạt Bot
+        env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python main.py
+        run: |
+          echo "=========================================="
+          echo "🔍 HỆ THỐNG ĐANG QUÉT TOÀN BỘ FILE CỦA ANH LONG TRÊN GITHUB:"
+          ls -R
+          echo "=========================================="
+          
+          # Tự động tìm kiếm file chạy ở các tầng thư mục khác nhau
+          if [ -f main.py ]; then
+            python main.py
+          elif [ -f Auto_Dev_Agent/main.py ]; then
+            python Auto_Dev_Agent/main.py
+          elif [ -f Auto_Dev_Agent/meta_team_config.py ]; then
+            echo "Tìm thấy file cấu hình gốc meta_team_config.py, đang kích hoạt..."
+            python Auto_Dev_Agent/meta_team_config.py
+          else
+            echo "❌ Không tìm thấy file chạy phù hợp. Vui lòng xem danh sách quét ở trên!"
+            exit 1
+          fi
