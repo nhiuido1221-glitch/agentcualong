@@ -7,45 +7,36 @@ on:
 
 jobs:
   run-bot:
-    runs-on: ubuntu-latest # Quay về máy chủ Linux siêu nhẹ của Cloud
+    runs-on: windows-latest
 
     steps:
-      - name: 1. Tải toàn bộ kho chứa về máy chủ ảo
+      - name: 1. Tải kho chứa từ GitHub
         uses: actions/checkout@v4
 
-      - name: 2. Cài đặt môi trường Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: 3. Cài đặt các thư viện bắt buộc
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests feedparser beautifulsoup4 google-generativeai python-dotenv
-
-      - name: 4. Dò tìm file gốc và Kích hoạt Bot
+      - name: 2. Giải nén và Kích hoạt MetaApp.exe
         env:
-          # Nạp 3 chìa khóa từ két sắt bảo mật
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        shell: pwsh
         run: |
-          echo "🔍 Đang dùng Radar tìm file mã nguồn Python..."
+          Write-Host "🔍 Đang tìm cục nén MetaApp.zip trên hệ thống..."
+          $zipFile = Get-ChildItem -Path . -Filter "MetaApp.zip" -Recurse | Select-Object -First 1
           
-          # Lệnh quét tìm đích danh file main.py trong thư mục build của anh
-          FILE_PATH=$(find . -name "main.py" | grep "build_" | head -n 1)
-          
-          # Nếu không thấy trong thư mục build, tìm ở ngoài gốc
-          if [ -z "$FILE_PATH" ]; then
-              FILE_PATH=$(find . -name "main.py" | head -n 1)
-          fi
-          
-          if [ -n "$FILE_PATH" ]; then
-              echo "✅ TÌM THẤY FILE GỐC TẠI: $FILE_PATH"
-              echo "🚀 Bắt đầu chạy Bot trên mây..."
-              python "$FILE_PATH"
-          else
-              echo "❌ LỖI: Không tìm thấy file main.py nào. Danh sách file:"
-              ls -R
+          if ($zipFile) {
+              Write-Host "✅ Đã thấy! Đang xé vỏ bọc giải nén..."
+              $extractPath = "$($zipFile.DirectoryName)\ExtractedApp"
+              Expand-Archive -Path $zipFile.FullName -DestinationPath $extractPath -Force
+              
+              $exe = Get-ChildItem -Path $extractPath -Filter "MetaApp.exe" -Recurse | Select-Object -First 1
+              if ($exe) {
+                  Write-Host "🚀 File EXE nguyên vẹn! Đang bắn bản tin..."
+                  & $exe.FullName
+              } else {
+                  Write-Error "❌ Giải nén xong nhưng bên trong trống trơn!"
+                  exit 1
+              }
+          } else {
+              Write-Error "❌ LỖI: Chưa tải file MetaApp.zip lên GitHub!"
               exit 1
-          fi
+          }
