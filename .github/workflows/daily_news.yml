@@ -2,47 +2,31 @@ name: Daily News Bot
 
 on:
   schedule:
+    # Tự động chạy vào đúng 07:00 sáng giờ Việt Nam mỗi ngày
     - cron: '0 0 * * *'
   workflow_dispatch: # Tạo nút bấm chạy bằng tay để test
 
 jobs:
   run-bot:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest # Chuyển sang máy chủ Windows Cloud để nuốt được file .exe
 
     steps:
-      - name: 1. Tải code về máy chủ ảo
+      - name: 1. Tải toàn bộ thư mục dự án về máy chủ ảo
         uses: actions/checkout@v4
 
-      - name: 2. Cài đặt Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: 3. Cài đặt các thư viện bắt buộc
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests feedparser beautifulsoup4 google-generativeai python-dotenv
-
-      - name: 4. Quét danh sách file và Kích hoạt Bot
+      - name: 2. Kích hoạt trực tiếp con Bot MetaApp.exe
         env:
+          # Nạp key bảo mật từ két sắt Secrets vào file .exe
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        shell: pwsh
         run: |
-          echo "=========================================="
-          echo "🔍 HỆ THỐNG ĐANG QUÉT TOÀN BỘ FILE CỦA ANH LONG TRÊN GITHUB:"
-          ls -R
-          echo "=========================================="
-          
-          # Tự động tìm kiếm file chạy ở các tầng thư mục khác nhau
-          if [ -f main.py ]; then
-            python main.py
-          elif [ -f Auto_Dev_Agent/main.py ]; then
-            python Auto_Dev_Agent/main.py
-          elif [ -f Auto_Dev_Agent/meta_team_config.py ]; then
-            echo "Tìm thấy file cấu hình gốc meta_team_config.py, đang kích hoạt..."
-            python Auto_Dev_Agent/meta_team_config.py
-          else
-            echo "❌ Không tìm thấy file chạy phù hợp. Vui lòng xem danh sách quét ở trên!"
-            exit 1
-          fi
+          $exePath = "Auto_Dev_Agent/build_20260707_225251_d8c5c0/MetaApp.exe"
+          if (Test-Path $exePath) {
+              Write-Host "🚀 Tìm thấy file thực thi! Đang kích hoạt chạy trên Cloud..."
+              & $exePath
+          } else {
+              Write-Error "❌ LỖI: Không tìm thấy file MetaApp.exe tại đường dẫn trên GitHub!"
+              exit 1
+          }
